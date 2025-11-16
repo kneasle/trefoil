@@ -9,7 +9,6 @@ pub(crate) struct Viewport {
     camera: Camera,
     control: OrbitControl,
 
-    face_material: PhysicalMaterial,
     wireframe_material: PhysicalMaterial,
 }
 
@@ -30,16 +29,6 @@ impl Viewport {
         let control = OrbitControl::new(camera.target(), 0.1 * scene_radius, 100.0 * scene_radius);
 
         // Materials
-        let mut face_material = PhysicalMaterial::new_opaque(
-            context,
-            &CpuMaterial {
-                albedo: Srgba::WHITE,
-                roughness: 0.7,
-                metallic: 0.0,
-                ..Default::default()
-            },
-        );
-        face_material.render_states.cull = Cull::Back;
         let mut wireframe_material = PhysicalMaterial::new_opaque(
             context,
             &CpuMaterial {
@@ -57,7 +46,6 @@ impl Viewport {
             camera,
             control,
 
-            face_material,
             wireframe_material,
         }
     }
@@ -93,12 +81,12 @@ impl Viewport {
             let mesh = Mesh::new(&self.context, &cpu_mesh);
             meshes.push(Box::new(Gm::new(mesh, &self.face_material)));
         }
-        meshes.push(Box::new(Gm::new(
-            model.edge_mesh(&self.context, edges_to_highlight),
-            &self.wireframe_material,
-        )));
         */
 
+        meshes.push(Box::new(Gm::new(
+            model.edge_mesh(&self.context),
+            &self.wireframe_material,
+        )));
         meshes.push(Box::new(Gm::new(
             model.vertex_mesh(&self.context),
             &self.wireframe_material,

@@ -10,13 +10,14 @@ fn main() {
     // Create window
     let window = Window::new(WindowSettings {
         title: "Trefoil".to_string(),
+        max_size: Some((1000, 800)),
         ..Default::default()
     })
     .unwrap();
     let context = window.gl();
 
     // Create model
-    let model = model::Model {};
+    let model = model::Model::polygon(8);
 
     // Create model view
     let mut view = viewport::Viewport::new(&context, window.viewport());
@@ -25,7 +26,7 @@ fn main() {
     let mut gui = three_d::GUI::new(&context);
     window.render_loop(move |mut frame_input| {
         // Render GUI
-        let mut left_panel_width = 0.0;
+        let left_panel_width = 0.0;
         let mut right_panel_width = 0.0;
         let mut redraw = gui.update(
             &mut frame_input.events,
@@ -37,10 +38,12 @@ fn main() {
                 // Set colors
                 catppuccin_egui::set_theme(egui_context, COLOR_THEME);
                 // Left panel
+                /*
                 let response = SidePanel::left("left-panel")
                     .min_width(300.0)
                     .show(egui_context, |ui| ui.heading("Models"));
                 left_panel_width = response.response.rect.width();
+                */
                 // Right panel
                 let response = SidePanel::right("right-panel")
                     .min_width(250.0)

@@ -56,7 +56,7 @@ impl Viewport {
         redraw |= self
             .control
             .handle_events(&mut self.camera, &mut frame_input.events);
-        redraw
+        redraw | true
     }
 
     pub fn render(&mut self, model: &crate::model::Model, target: &RenderTarget) {

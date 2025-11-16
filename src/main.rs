@@ -4,6 +4,8 @@ mod viewport;
 
 use three_d::*;
 
+use crate::model::SimulationOptions;
+
 const COLOR_THEME: catppuccin_egui::Theme = catppuccin_egui::MOCHA;
 
 fn main() {
@@ -17,7 +19,8 @@ fn main() {
     let context = window.gl();
 
     // Create model
-    let model = model::Model::polygon(8);
+    let mut model = model::Model::polygon(8);
+    let sim_opts = SimulationOptions::default();
 
     // Create model view
     let mut view = viewport::Viewport::new(&context, window.viewport());
@@ -25,6 +28,10 @@ fn main() {
     // Main loop
     let mut gui = three_d::GUI::new(&context);
     window.render_loop(move |mut frame_input| {
+        // Update simulation
+        let time_step = frame_input.elapsed_time as f32 / 1000.0;
+        model.simulate(&sim_opts, time_step);
+
         // Render GUI
         let left_panel_width = 0.0;
         let mut right_panel_width = 0.0;
@@ -34,20 +41,11 @@ fn main() {
             frame_input.viewport,
             frame_input.device_pixel_ratio,
             |egui_context| {
-                use three_d::egui::*;
-                // Set colors
                 catppuccin_egui::set_theme(egui_context, COLOR_THEME);
-                // Left panel
-                /*
-                let response = SidePanel::left("left-panel")
-                    .min_width(300.0)
-                    .show(egui_context, |ui| ui.heading("Models"));
-                left_panel_width = response.response.rect.width();
-                */
                 // Right panel
-                let response = SidePanel::right("right-panel")
+                let response = egui::SidePanel::right("right-panel")
                     .min_width(250.0)
-                    .show(egui_context, |ui| ui.heading("View"));
+                    .show(egui_context, |ui| ui.heading("Settings"));
                 right_panel_width = response.response.rect.width();
             },
         );

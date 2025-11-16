@@ -25,11 +25,60 @@ impl Model {
             edges: (0..n).into_iter().circular_tuple_windows().collect_vec(),
         }
     }
+}
 
-    ///////////////
-    // RENDERING //
-    ///////////////
+////////////////
+// SIMULATION //
+////////////////
 
+// TODO: Make this its own module?
+
+#[derive(Debug, Clone)]
+pub struct SimulationOptions {
+    edge_length_force: f32,
+}
+
+impl Default for SimulationOptions {
+    fn default() -> Self {
+        Self {
+            edge_length_force: 3.0,
+        }
+    }
+}
+
+impl Model {
+    pub fn simulate(&mut self, options: &SimulationOptions, time_step: f32) {
+        // List of forces, which we will accumulate as we go through the various forces
+        let mut vert_forces = vec![Vec3::zero(); self.verts.len()];
+
+        // Calculate forces from edges wanting to have length one
+        for &(v_idx1, v_idx2) in &self.edges {
+            let v1 = self.verts[v_idx1];
+            let v2 = self.verts[v_idx2];
+
+            let direction = v2 - v1;
+            let length = direction.magnitude();
+            let force_on_v2 = direction * (1.0 - length) * options.edge_length_force;
+            let force_on_v1 = -force_on_v2;
+
+            vert_forces[v_idx1] += force_on_v1;
+            vert_forces[v_idx2] += force_on_v2;
+        }
+
+        // Update the vertex positions by a little bit in their movement directions
+        for (force, v) in vert_forces.into_iter().zip_eq(&mut self.verts) {
+            *v += force * time_step;
+        }
+
+        // TODO: recentre the model
+    }
+}
+
+///////////////
+// RENDERING //
+///////////////
+
+impl Model {
     pub fn edge_mesh(&self, context: &three_d::Context) -> InstancedMesh {
         let mut cylinder = CpuMesh::cylinder(10);
         cylinder

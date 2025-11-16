@@ -20,7 +20,11 @@ fn main() {
 
     // Create model
     let mut model = model::Model::polygon(8);
-    let sim_opts = SimulationOptions::default();
+    model.add_polygon(8, &vec![0, 1]);
+
+    // Gui variables
+    let mut is_simulating = false;
+    let mut sim_opts = SimulationOptions::default();
 
     // Create model view
     let mut view = viewport::Viewport::new(&context, window.viewport());
@@ -28,10 +32,6 @@ fn main() {
     // Main loop
     let mut gui = three_d::GUI::new(&context);
     window.render_loop(move |mut frame_input| {
-        // Update simulation
-        let time_step = frame_input.elapsed_time as f32 / 1000.0;
-        model.simulate(&sim_opts, time_step);
-
         // Render GUI
         let left_panel_width = 0.0;
         let mut right_panel_width = 0.0;
@@ -43,12 +43,21 @@ fn main() {
             |egui_context| {
                 catppuccin_egui::set_theme(egui_context, COLOR_THEME);
                 // Right panel
-                let response = egui::SidePanel::right("right-panel")
-                    .min_width(250.0)
-                    .show(egui_context, |ui| ui.heading("Settings"));
+                let response = egui::SidePanel::right("right-panel").min_width(250.0).show(
+                    egui_context,
+                    |ui| {
+                        sidebar_gui(ui, &mut is_simulating, &mut sim_opts);
+                    },
+                );
                 right_panel_width = response.response.rect.width();
             },
         );
+
+        // Update simulation
+        if is_simulating {
+            let time_step = frame_input.elapsed_time as f32 / 1000.0;
+            model.simulate(&sim_opts, time_step);
+        }
 
         // Calculate remaining viewport
         let wl = (left_panel_width * frame_input.device_pixel_ratio) as i32;
@@ -62,6 +71,7 @@ fn main() {
         };
 
         // Update the 3D view
+        redraw |= is_simulating;
         redraw |= view.update(&mut frame_input, viewport);
         if redraw {
             let screen = frame_input.screen();
@@ -76,4 +86,13 @@ fn main() {
             ..Default::default()
         }
     });
+}
+
+fn sidebar_gui(ui: &mut egui::Ui, is_simulating: &mut bool, _sim_opts: &mut SimulationOptions) {
+    ui.heading("Simuation");
+
+    let button_text = if *is_simulating { "Pause" } else { "Unpause" };
+    if ui.button(button_text).clicked() {
+        *is_simulating = !*is_simulating;
+    }
 }

@@ -15,7 +15,7 @@ impl Model {
     pub fn polygon(n: usize) -> Self {
         let mut verts = Vec::<Vec3>::new();
         for i in 0..n {
-            let a = Deg(360.0 / (n as f32) * (i as f32 + 0.5));
+            let a = Deg(360.0 / (n as f32) * (i as f32 - 0.5));
             let (x, y) = a.sin_cos();
             verts.push(Vec3::new(x, 0.0, y));
         }
@@ -24,6 +24,29 @@ impl Model {
             verts,
             edges: (0..n).into_iter().circular_tuple_windows().collect_vec(),
         }
+    }
+
+    pub fn add_polygon(&mut self, n: usize, verts: &[usize]) {
+        // TODO: Calculate this properly
+        let normal = Vec3::unit_y();
+
+        let v1 = self.verts[verts[0]];
+        let v2 = self.verts[verts[1]];
+        let d = v2 - v1;
+
+        let out = d.cross(normal).normalize();
+
+        // Add verts
+        let next_idx = self.verts.len();
+        self.verts.push(v1 + out * d.magnitude());
+        self.verts.push(v2 + out * d.magnitude());
+
+        // Add edges
+        self.edges.push((verts[0], next_idx + 0));
+        self.edges.push((verts[1], next_idx + 1));
+        self.edges.push((next_idx + 0, next_idx + 1));
+
+        dbg!(n, verts);
     }
 }
 

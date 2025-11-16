@@ -71,7 +71,7 @@ impl Viewport {
         redraw
     }
 
-    pub fn render(&mut self, target: &RenderTarget) {
+    pub fn render(&mut self, model: &crate::model::Model, target: &RenderTarget) {
         // Lights
         let ambient = AmbientLight::new(&self.context, 0.7, Srgba::WHITE);
         let directional0 =
@@ -80,9 +80,14 @@ impl Viewport {
             DirectionalLight::new(&self.context, 2.0, Srgba::WHITE, vec3(1.0, 1.0, 1.0));
         let lights = [&ambient as &dyn Light, &directional0, &directional1];
 
+        // Create an example mesh for illustration
+        let radius = 0.1;
+        let mut sphere = CpuMesh::sphere(8);
+        sphere.transform(Mat4::from_scale(radius)).unwrap();
+
         // Meshes
         // TODO: Add some caching to not send these to the GPU every frame
-        let meshes: Vec<Box<dyn Object>> = Vec::new();
+        let mut meshes: Vec<Box<dyn Object>> = Vec::new();
         /*
         if let Some(cpu_mesh) = model.face_mesh() {
             let mesh = Mesh::new(&self.context, &cpu_mesh);
@@ -92,11 +97,12 @@ impl Viewport {
             model.edge_mesh(&self.context, edges_to_highlight),
             &self.wireframe_material,
         )));
+        */
+
         meshes.push(Box::new(Gm::new(
             model.vertex_mesh(&self.context),
             &self.wireframe_material,
         )));
-        */
 
         target.render(&self.camera, meshes.iter().map(Deref::deref), &lights);
     }

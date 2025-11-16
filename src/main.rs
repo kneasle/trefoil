@@ -1,6 +1,8 @@
+mod model;
+mod utils;
 mod viewport;
 
-use three_d::{egui::Color32, *};
+use three_d::*;
 
 const COLOR_THEME: catppuccin_egui::Theme = catppuccin_egui::MOCHA;
 
@@ -12,6 +14,9 @@ fn main() {
     })
     .unwrap();
     let context = window.gl();
+
+    // Create model
+    let model = model::Model {};
 
     // Create model view
     let mut view = viewport::Viewport::new(&context, window.viewport());
@@ -32,21 +37,14 @@ fn main() {
                 // Set colors
                 catppuccin_egui::set_theme(egui_context, COLOR_THEME);
                 // Left panel
-                let response =
-                    SidePanel::left("left-panel")
-                        .min_width(300.0)
-                        .show(egui_context, |ui| {
-                            ui.heading("Models");
-                            ui.separator();
-                        });
+                let response = SidePanel::left("left-panel")
+                    .min_width(300.0)
+                    .show(egui_context, |ui| ui.heading("Models"));
                 left_panel_width = response.response.rect.width();
                 // Right panel
-                let response =
-                    SidePanel::right("right-panel")
-                        .min_width(250.0)
-                        .show(egui_context, |ui| {
-                            ui.heading("View");
-                        });
+                let response = SidePanel::right("right-panel")
+                    .min_width(250.0)
+                    .show(egui_context, |ui| ui.heading("View"));
                 right_panel_width = response.response.rect.width();
             },
         );
@@ -66,8 +64,8 @@ fn main() {
         redraw |= view.update(&mut frame_input, viewport);
         if redraw {
             let screen = frame_input.screen();
-            screen.clear(clear_state_for_egui_color(COLOR_THEME.base));
-            view.render(&screen);
+            screen.clear(utils::clear_state_for_egui_color(COLOR_THEME.base));
+            view.render(&model, &screen);
             screen.write(|| gui.render()).unwrap();
         }
 
@@ -77,15 +75,4 @@ fn main() {
             ..Default::default()
         }
     });
-}
-
-fn clear_state_for_egui_color(clear_color: Color32) -> three_d::ClearState {
-    let clear_state = three_d::ClearState::color_and_depth(
-        clear_color.r() as f32 / 255.0,
-        clear_color.g() as f32 / 255.0,
-        clear_color.b() as f32 / 255.0,
-        1.0,
-        1.0,
-    );
-    clear_state
 }

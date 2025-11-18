@@ -20,9 +20,9 @@ fn main() {
 
     // Create model
     let mut model = model::Model::polygon(8, 2);
-    model.add_polygon(8, &vec![1, 2]);
-    model.add_polygon(6, &vec![9, 2, 3]);
-    model.add_polygon(6, &vec![0, 1, 4]);
+    model.add_polygon(8, &vec![1, 2], Some(Vec3::new(0.5, 0.0, 1.0)));
+    model.add_polygon(6, &vec![9, 2, 3], Some(Vec3::new(0.5, 0.0, 1.0)));
+    model.add_polygon(6, &vec![0, 1, 4], Some(Vec3::new(-0.5, 0.0, 1.0)));
 
     let unsimulated_model = model.clone();
 

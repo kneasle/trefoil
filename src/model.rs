@@ -67,13 +67,14 @@ impl Model {
         }
     }
 
-    pub fn add_polygon(&mut self, n: usize, verts: &[usize]) {
+    pub fn add_polygon(&mut self, n: usize, verts: &[usize], override_normal: Option<Vec3>) {
         // Calculate the normal to the current chain of vertices
         assert!(verts.len() >= 2);
         let normal;
-        if verts.len() == 2 {
-            normal = Vec3::new(0.5, 0.0, 1.0).normalize();
+        if let Some(norm) = override_normal {
+            normal = norm.normalize();
         } else {
+            assert!(verts.len() >= 3);
             let mut total_normal = Vec3::zero();
             for (i1, i2, i3) in verts.iter().tuple_windows() {
                 let v1 = self.verts[*i1];

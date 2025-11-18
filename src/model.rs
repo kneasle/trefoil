@@ -7,23 +7,41 @@ const VERT_RADIUS: f32 = 0.1;
 #[derive(Debug, Clone, Default)]
 pub struct Model {
     verts: Vec<Vec3>,
-    edges: Vec<(usize, usize)>, // Indices into the 'verts' list
+    edges: Vec<Edge>,
+}
+
+#[derive(Debug, Clone, Copy)]
+struct Edge {
+    vert_idx1: usize,
+    vert_idx2: usize,
+    symmetry_idx2: usize,
 }
 
 impl Model {
     // Creates an empty model
-    pub fn polygon(n: usize) -> Self {
+    pub fn polygon(n: usize, symmetry: usize) -> Self {
+        // Generate symmetries
+        assert!(n % symmetry == 0);
+
+        // Generate vertices
         let mut verts = Vec::<Vec3>::new();
         for i in 0..n {
             let a = Deg(360.0 / (n as f32) * (i as f32 - 0.5));
             let (x, y) = a.sin_cos();
-            verts.push(Vec3::new(x, 0.0, y));
+            verts.push(Vec3::new(x, y, 0.0));
         }
 
-        Self {
-            verts,
-            edges: (0..n).into_iter().circular_tuple_windows().collect_vec(),
+        // Generate edges
+        let mut edges = Vec::<Edge>::new();
+        for (vert_idx1, vert_idx2) in (0..n).into_iter().circular_tuple_windows() {
+            edges.push(Edge {
+                vert_idx1,
+                vert_idx2,
+                symmetry_idx2: 0,
+            });
         }
+
+        Self { verts, edges }
     }
 
     pub fn add_polygon(&mut self, n: usize, verts: &[usize]) {
@@ -42,9 +60,21 @@ impl Model {
         self.verts.push(v2 + out * d.magnitude());
 
         // Add edges
-        self.edges.push((verts[0], next_idx + 0));
-        self.edges.push((verts[1], next_idx + 1));
-        self.edges.push((next_idx + 0, next_idx + 1));
+        self.edges.push(Edge {
+            vert_idx1: verts[0],
+            vert_idx2: next_idx + 0,
+            symmetry_idx2: 0,
+        });
+        self.edges.push(Edge {
+            vert_idx1: verts[1],
+            vert_idx2: next_idx + 1,
+            symmetry_idx2: 0,
+        });
+        self.edges.push(Edge {
+            vert_idx1: next_idx + 0,
+            vert_idx2: next_idx + 1,
+            symmetry_idx2: 0,
+        });
 
         dbg!(n, verts);
     }
@@ -75,17 +105,17 @@ impl Model {
         let mut vert_forces = vec![Vec3::zero(); self.verts.len()];
 
         // Calculate forces from edges wanting to have length one
-        for &(v_idx1, v_idx2) in &self.edges {
-            let v1 = self.verts[v_idx1];
-            let v2 = self.verts[v_idx2];
+        for edge in &self.edges {
+            let v1 = self.verts[edge.vert_idx1];
+            let v2 = self.verts[edge.vert_idx2];
 
             let direction = v2 - v1;
             let length = direction.magnitude();
             let force_on_v2 = direction * (1.0 - length) * options.edge_length_force;
             let force_on_v1 = -force_on_v2;
 
-            vert_forces[v_idx1] += force_on_v1;
-            vert_forces[v_idx2] += force_on_v2;
+            vert_forces[edge.vert_idx1] += force_on_v1;
+            vert_forces[edge.vert_idx2] += force_on_v2;
         }
 
         // Update the vertex positions by a little bit in their movement directions
@@ -115,11 +145,14 @@ impl Model {
     fn edge_instances(&self) -> Instances {
         let mut colors = Vec::new();
         let mut transformations = Vec::new();
-        for &(v1, v2) in &self.edges {
+        for edge in &self.edges {
             colors.push(crate::utils::egui_color_to_srgba(
                 crate::COLOR_THEME.sapphire,
             ));
-            transformations.push(edge_transform(self.verts[v1], self.verts[v2]));
+            transformations.push(edge_transform(
+                self.verts[edge.vert_idx1],
+                self.verts[edge.vert_idx2],
+            ));
         }
 
         Instances {

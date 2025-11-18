@@ -1,8 +1,8 @@
 use itertools::Itertools;
 use three_d::{egui::Vec2, *};
 
-const EDGE_RADIUS: f32 = 0.05;
-const VERT_RADIUS: f32 = 0.1;
+const EDGE_RADIUS: f32 = 0.1;
+const VERT_RADIUS: f32 = 0.15;
 
 #[derive(Debug, Clone, Default)]
 pub struct Model {
@@ -153,13 +153,15 @@ impl Model {
 
 #[derive(Debug, Clone)]
 pub struct SimulationOptions {
-    edge_length_force: f32,
+    pub edge_length_force: f32,
+    pub vertex_angle_force: f32,
 }
 
 impl Default for SimulationOptions {
     fn default() -> Self {
         Self {
-            edge_length_force: 3.0,
+            edge_length_force: 10.0,
+            vertex_angle_force: 10.0,
         }
     }
 }
@@ -183,12 +185,12 @@ impl Model {
                 self.inverse_symmetries[edge.symmetry_idx2] * force_on_v2;
         }
 
+        // Calculate forces from vertices wanting to have all their edges at 120
+
         // Update the vertex positions by a little bit in their movement directions
         for (force, v) in vert_forces.into_iter().zip_eq(&mut self.verts) {
             *v += force * time_step;
         }
-
-        // TODO: recentre the model
     }
 }
 

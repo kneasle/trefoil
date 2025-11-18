@@ -101,7 +101,7 @@ fn main() {
 fn sidebar_gui(
     ui: &mut egui::Ui,
     is_simulating: &mut bool,
-    _sim_opts: &mut SimulationOptions,
+    sim_opts: &mut SimulationOptions,
     model: &mut crate::model::Model,
     prev_model: &crate::model::Model,
 ) {
@@ -109,13 +109,23 @@ fn sidebar_gui(
         "Simulation is {}",
         if *is_simulating { "running" } else { "paused" }
     ));
-
     let button_text = if *is_simulating { "Pause" } else { "Play" };
     if ui.button(button_text).clicked() {
         *is_simulating = !*is_simulating;
     }
-
     if ui.button("Reset").clicked() {
         *model = prev_model.clone();
+        *is_simulating = false;
     }
+
+    ui.add_space(20.0);
+    ui.heading("Simulation options");
+    ui.horizontal(|ui| {
+        ui.label("Edge length force:");
+        ui.add(egui::Slider::new(&mut sim_opts.edge_length_force, 0.0..=30.0).show_value(true));
+    });
+    ui.horizontal(|ui| {
+        ui.label("Vertex angle force:");
+        ui.add(egui::Slider::new(&mut sim_opts.vertex_angle_force, 0.0..=30.0).show_value(true));
+    });
 }

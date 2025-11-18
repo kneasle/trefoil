@@ -19,8 +19,8 @@ fn main() {
     let context = window.gl();
 
     // Create model
-    let mut model = model::Model::polygon(8, 2);
-    model.add_polygon(8, &vec![0, 1]);
+    let mut model = model::Model::polygon(6, 3);
+    // model.add_polygon(8, &vec![0, 1]);
 
     // Gui variables
     let mut is_simulating = false;

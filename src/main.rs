@@ -24,6 +24,8 @@ fn main() {
     model.add_polygon(6, &vec![9, 2, 3]);
     model.add_polygon(6, &vec![0, 1, 4]);
 
+    let unsimulated_model = model.clone();
+
     // Gui variables
     let mut is_simulating = false;
     let mut sim_opts = SimulationOptions::default();
@@ -45,11 +47,18 @@ fn main() {
             |egui_context| {
                 catppuccin_egui::set_theme(egui_context, COLOR_THEME);
                 // Right panel
-                let response = egui::SidePanel::right("right-panel")
-                    .min_width(250.0)
-                    .show(egui_context, |ui| {
-                        sidebar_gui(ui, &mut is_simulating, &mut sim_opts)
-                    });
+                let response = egui::SidePanel::right("right-panel").min_width(250.0).show(
+                    egui_context,
+                    |ui| {
+                        sidebar_gui(
+                            ui,
+                            &mut is_simulating,
+                            &mut sim_opts,
+                            &mut model,
+                            &unsimulated_model,
+                        )
+                    },
+                );
                 right_panel_width = response.response.rect.width();
             },
         );
@@ -89,11 +98,24 @@ fn main() {
     });
 }
 
-fn sidebar_gui(ui: &mut egui::Ui, is_simulating: &mut bool, _sim_opts: &mut SimulationOptions) {
-    ui.heading("Simuation");
+fn sidebar_gui(
+    ui: &mut egui::Ui,
+    is_simulating: &mut bool,
+    _sim_opts: &mut SimulationOptions,
+    model: &mut crate::model::Model,
+    prev_model: &crate::model::Model,
+) {
+    ui.heading(format!(
+        "Simulation is {}",
+        if *is_simulating { "running" } else { "paused" }
+    ));
 
-    let button_text = if *is_simulating { "Pause" } else { "Unpause" };
+    let button_text = if *is_simulating { "Pause" } else { "Play" };
     if ui.button(button_text).clicked() {
         *is_simulating = !*is_simulating;
+    }
+
+    if ui.button("Reset").clicked() {
+        *model = prev_model.clone();
     }
 }

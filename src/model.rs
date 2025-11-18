@@ -34,11 +34,12 @@ impl Model {
         let verts_per_symmetry = n / symmetry_factor;
 
         // Generate vertices
+        let radius = 0.5 / Deg(180.0 / n as f32).sin();
         let mut verts = Vec::<Vec3>::new();
         for i in 0..verts_per_symmetry {
             let a = Deg(360.0 / (n as f32) * (i as f32 - 0.5));
             let (x, y) = a.sin_cos();
-            verts.push(Vec3::new(y, x, 0.0));
+            verts.push(Vec3::new(y, x, 0.0) * radius);
         }
 
         // Generate edges within the part

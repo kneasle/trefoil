@@ -67,8 +67,21 @@ impl Model {
     }
 
     pub fn add_polygon(&mut self, n: usize, verts: &[usize]) {
-        // TODO: Calculate this properly
-        let normal = Vec3::unit_z();
+        // Calculate the normal to the current chain of vertices
+        assert!(verts.len() >= 2);
+        let normal;
+        if verts.len() == 2 {
+            normal = Vec3::new(0.5, 0.0, 1.0).normalize();
+        } else {
+            let mut total_normal = Vec3::zero();
+            for (i1, i2, i3) in verts.iter().tuple_windows() {
+                let v1 = self.verts[*i1];
+                let v2 = self.verts[*i2];
+                let v3 = self.verts[*i3];
+                total_normal += (v3 - v2).cross(v2 - v1);
+            }
+            normal = total_normal.normalize();
+        }
 
         let first_vert_idx = *verts.first().unwrap();
         let last_vert_idx = *verts.last().unwrap();
@@ -76,7 +89,7 @@ impl Model {
         // We want to distribute `num_new_verts` as a continuation of the two ends of `verts`
         let num_new_verts = n - verts.len();
         if num_new_verts == 0 {
-            // TODO: Just join the two verts
+            // TODO: Just join the existing two verts
             todo!();
         }
 

@@ -1,5 +1,5 @@
 use itertools::Itertools;
-use three_d::*;
+use three_d::{egui::Vec2, *};
 
 const EDGE_RADIUS: f32 = 0.05;
 const VERT_RADIUS: f32 = 0.1;
@@ -38,7 +38,7 @@ impl Model {
         for i in 0..verts_per_symmetry {
             let a = Deg(360.0 / (n as f32) * (i as f32 - 0.5));
             let (x, y) = a.sin_cos();
-            verts.push(Vec3::new(y, x, 0.0) * 0.7);
+            verts.push(Vec3::new(y, x, 0.0));
         }
 
         // Generate edges within the part
@@ -68,37 +68,60 @@ impl Model {
 
     pub fn add_polygon(&mut self, n: usize, verts: &[usize]) {
         // TODO: Calculate this properly
-        let normal = Vec3::unit_y();
+        let normal = Vec3::unit_z();
 
-        let v1 = self.verts[verts[0]];
-        let v2 = self.verts[verts[1]];
+        let first_vert_idx = *verts.first().unwrap();
+        let last_vert_idx = *verts.last().unwrap();
+
+        // We want to distribute `num_new_verts` as a continuation of the two ends of `verts`
+        let num_new_verts = n - verts.len();
+        if num_new_verts == 0 {
+            // TODO: Just join the two verts
+            todo!();
+        }
+
+        // Get two perpendicular axes to define the plane in which we will build our polygon
+        let v1 = self.verts[first_vert_idx];
+        let v2 = self.verts[last_vert_idx];
         let d = v2 - v1;
+        let out = d.cross(normal);
 
-        let out = d.cross(normal).normalize();
+        // Calculate how far away from line (v1-v2) the centre of the new polygon ought to be,
+        // as a multiple of `out`.
+        let half_radial_angle = Deg(180.0) - Deg(180.0) / (n as f32) * (num_new_verts as f32 + 1.0);
+        let polygon_centre_dist = 0.5 / half_radial_angle.tan();
 
         // Add verts
-        let next_idx = self.verts.len();
-        self.verts.push(v1 + out * d.magnitude());
-        self.verts.push(v2 + out * d.magnitude());
+        let idx_of_first_vert = self.verts.len();
+        let angle_step = Deg(360.0) / (n as f32);
+        let polygon_radius = Vec2::new(0.5, polygon_centre_dist).length();
+        for v_idx in 0..num_new_verts {
+            // Interpreted as angle from the -y axis
+            let angle = angle_step * (v_idx as f32 + 1.0) + half_radial_angle;
+            let x = 0.5 - angle.sin() * polygon_radius;
+            let y = polygon_centre_dist - angle.cos() * polygon_radius;
+            self.verts.push(v1 + d * x + out * y);
+        }
 
-        // Add edges
+        // Add edges between the new verts
+        for (i1, i2) in (0..num_new_verts).into_iter().tuple_windows() {
+            self.edges.push(Edge {
+                vert_idx1: idx_of_first_vert + i1,
+                vert_idx2: idx_of_first_vert + i2,
+                symmetry_idx2: 0,
+            });
+        }
+        // Link the ends of the new chains of verts to existing verts
         self.edges.push(Edge {
-            vert_idx1: verts[0],
-            vert_idx2: next_idx + 0,
+            vert_idx1: first_vert_idx,
+            vert_idx2: idx_of_first_vert,
             symmetry_idx2: 0,
         });
         self.edges.push(Edge {
-            vert_idx1: verts[1],
-            vert_idx2: next_idx + 1,
+            vert_idx1: last_vert_idx,
+            vert_idx2: idx_of_first_vert + num_new_verts - 1,
             symmetry_idx2: 0,
         });
-        self.edges.push(Edge {
-            vert_idx1: next_idx + 0,
-            vert_idx2: next_idx + 1,
-            symmetry_idx2: 0,
-        });
-
-        dbg!(n, verts);
     }
 
     fn edge_vert_positions(&self, edge: &Edge) -> (Vec3, Vec3) {

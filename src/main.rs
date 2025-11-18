@@ -19,8 +19,9 @@ fn main() {
     let context = window.gl();
 
     // Create model
-    let mut model = model::Model::polygon(6, 3);
-    // model.add_polygon(8, &vec![0, 1]);
+    let mut model = model::Model::polygon(8, 2);
+    model.add_polygon(8, &vec![0, 1]);
+    model.add_polygon(6, &vec![9, 1, 2]);
 
     // Gui variables
     let mut is_simulating = false;
@@ -43,12 +44,11 @@ fn main() {
             |egui_context| {
                 catppuccin_egui::set_theme(egui_context, COLOR_THEME);
                 // Right panel
-                let response = egui::SidePanel::right("right-panel").min_width(250.0).show(
-                    egui_context,
-                    |ui| {
-                        sidebar_gui(ui, &mut is_simulating, &mut sim_opts);
-                    },
-                );
+                let response = egui::SidePanel::right("right-panel")
+                    .min_width(250.0)
+                    .show(egui_context, |ui| {
+                        sidebar_gui(ui, &mut is_simulating, &mut sim_opts)
+                    });
                 right_panel_width = response.response.rect.width();
             },
         );

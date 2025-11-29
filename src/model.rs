@@ -145,6 +145,19 @@ impl Model {
         });
     }
 
+    pub fn connect_edge(
+        &mut self,
+        (vert_idx1, symmetry_idx1): (usize, usize),
+        (vert_idx2, symmetry_idx2): (usize, usize),
+    ) {
+        assert!(symmetry_idx1 == 0);
+        self.edges.push(Edge {
+            vert_idx1,
+            vert_idx2,
+            symmetry_idx2,
+        });
+    }
+
     pub fn ensure_all_verts_have_three_edges(&mut self) {
         for (vert_idx, edge_directions) in
             self.get_edge_directions_per_vert().into_iter().enumerate()

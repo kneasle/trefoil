@@ -24,14 +24,22 @@ fn main() {
     model.add_polygon(
         6,
         &vec![(2, 0), (1, 0), (9, 0)],
-        Some(Vec3::new(0.0, 0.5, -1.0)),
+        Some(Vec3::new(0.0, 1.0, -1.0)),
     );
     model.add_polygon(
         6,
         &vec![(4, 0), (0, 0), (3, 1)],
-        Some(Vec3::new(0.0, -0.5, -1.0)),
+        Some(Vec3::new(0.0, -1.0, -1.0)),
     );
-    model.ensure_all_verts_have_three_edges();
+    model.add_polygon(
+        6,
+        &vec![(15, 0), (3, 1), (2, 1), (10, 1)],
+        Some(Vec3::new(0.0, -1.0, 0.0)),
+    );
+    model.add_polygon(5, &vec![(16, 0), (17, 0)], Some(Vec3::new(0.0, -1.0, 1.0)));
+    model.add_polygon(6, &vec![(20, 0), (17, 0), (10, 1), (11, 1)], None);
+    model.add_polygon(6, &vec![(18, 0), (19, 0), (19, 1), (20, 1), (21, 1)], None);
+    model.connect_edge((19, 0), (19, 1));
 
     let unsimulated_model = model.clone();
 
@@ -126,6 +134,10 @@ fn sidebar_gui(
     ));
     let button_text = if *is_simulating { "Pause" } else { "Play" };
     if ui.button(button_text).clicked() {
+        if !*is_simulating {
+            // Add the extra vertices if we're starting a simulation
+            model.ensure_all_verts_have_three_edges();
+        }
         *is_simulating = !*is_simulating;
     }
     if ui.button("Reset").clicked() {

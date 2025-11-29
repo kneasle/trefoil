@@ -14,6 +14,12 @@ pub(crate) struct Viewport {
     text_material: ColorMaterial,
 }
 
+#[derive(Debug, Clone, Default)]
+pub struct RenderOptions {
+    pub show_axes: bool,
+    pub show_vert_indices: bool,
+}
+
 impl Viewport {
     pub fn new(context: &Context, viewport: three_d::Viewport) -> Self {
         // Camera
@@ -74,7 +80,12 @@ impl Viewport {
         redraw
     }
 
-    pub fn render(&mut self, model: &crate::model::Model, target: &RenderTarget) {
+    pub fn render(
+        &mut self,
+        model: &crate::model::Model,
+        render_opts: &RenderOptions,
+        target: &RenderTarget,
+    ) {
         // Lights
         let ambient = AmbientLight::new(&self.context, 0.7, Srgba::WHITE);
         let directional0 =
@@ -83,26 +94,29 @@ impl Viewport {
             DirectionalLight::new(&self.context, 2.0, Srgba::WHITE, vec3(1.0, 1.0, 1.0));
         let lights = [&ambient as &dyn Light, &directional0, &directional1];
 
-        // Create an example mesh for illustration
-        let radius = 0.1;
-        let mut sphere = CpuMesh::sphere(8);
-        sphere.transform(Mat4::from_scale(radius)).unwrap();
-
-        // Meshes
-        // TODO: Add some caching to not send these to the GPU every frame
         let mut meshes: Vec<Box<dyn Object>> = Vec::new();
 
         // Text
-        meshes.push(Box::new(Gm::new(
-            Mesh::new(
-                &self.context,
-                &self
-                    .text_generator
-                    .generate("Hello!", TextLayoutOptions::default()),
-            ),
-            &self.text_material,
-        )));
+        if render_opts.show_vert_indices {
+            for (text, pos) in model.vertex_texts() {
+                let mut mesh = Mesh::new(
+                    &self.context,
+                    &self
+                        .text_generator
+                        .generate(&text, TextLayoutOptions::default()),
+                );
+                let mesh_centre = mesh.aabb().center();
+                let new_transform = Mat4::from_translation(pos + Vec3::unit_z() * 0.2)
+                    * Mat4::from_scale(0.005)
+                    * Mat4::from_translation(-mesh_centre)
+                    * mesh.transformation();
+                mesh.set_transformation(new_transform);
 
+                meshes.push(Box::new(Gm::new(mesh, &self.text_material)));
+            }
+        }
+
+        // Model geometry
         meshes.push(Box::new(Gm::new(
             model.edge_mesh(&self.context),
             &self.wireframe_material,
@@ -111,6 +125,11 @@ impl Viewport {
             model.vertex_mesh(&self.context),
             &self.wireframe_material,
         )));
+
+        // Axes
+        if render_opts.show_axes {
+            meshes.push(Box::new(Axes::new(&self.context, 0.1, 1.0)));
+        }
 
         target.render(&self.camera, meshes.iter().map(Deref::deref), &lights);
     }

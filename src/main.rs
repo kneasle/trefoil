@@ -4,7 +4,7 @@ mod viewport;
 
 use three_d::*;
 
-use crate::model::SimulationOptions;
+use crate::{model::SimulationOptions, viewport::RenderOptions};
 
 const COLOR_THEME: catppuccin_egui::Theme = catppuccin_egui::MOCHA;
 
@@ -30,9 +30,10 @@ fn main() {
     // Gui variables
     let mut is_simulating = false;
     let mut sim_opts = SimulationOptions::default();
+    let mut render_opts = RenderOptions::default();
 
     // Create model view
-    let mut view = viewport::Viewport::new(&context, window.viewport());
+    let mut view = crate::viewport::Viewport::new(&context, window.viewport());
 
     // Main loop
     let mut gui = three_d::GUI::new(&context);
@@ -55,6 +56,7 @@ fn main() {
                             ui,
                             &mut is_simulating,
                             &mut sim_opts,
+                            &mut render_opts,
                             &mut model,
                             &unsimulated_model,
                         )
@@ -87,7 +89,7 @@ fn main() {
         if redraw {
             let screen = frame_input.screen();
             screen.clear(utils::clear_state_for_egui_color(COLOR_THEME.base));
-            view.render(&model, &screen);
+            view.render(&model, &render_opts, &screen);
             screen.write(|| gui.render()).unwrap();
         }
 
@@ -103,6 +105,7 @@ fn sidebar_gui(
     ui: &mut egui::Ui,
     is_simulating: &mut bool,
     sim_opts: &mut SimulationOptions,
+    render_opts: &mut RenderOptions,
     model: &mut crate::model::Model,
     prev_model: &crate::model::Model,
 ) {
@@ -137,4 +140,9 @@ fn sidebar_gui(
                 .logarithmic(true),
         );
     });
+
+    ui.add_space(20.0);
+    ui.heading("Rendering options");
+    ui.checkbox(&mut render_opts.show_axes, "Show axes");
+    ui.checkbox(&mut render_opts.show_vert_indices, "Show vertex indices");
 }

@@ -266,9 +266,7 @@ impl Model {
         let mut transformations = Vec::new();
         for symmetry in &self.symmetries {
             for edge in &self.edges {
-                colors.push(crate::utils::egui_color_to_srgba(
-                    crate::COLOR_THEME.sapphire,
-                ));
+                colors.push(crate::utils::egui_color_to_srgba(crate::COLOR_THEME.red));
                 transformations.push(self.edge_transform(edge, symmetry));
             }
         }
@@ -303,7 +301,7 @@ impl Model {
     }
 
     fn vertex_instances(&self) -> Instances {
-        let color = crate::utils::egui_color_to_srgba(crate::COLOR_THEME.sapphire);
+        let color = crate::utils::egui_color_to_srgba(crate::COLOR_THEME.red);
 
         let mut transformations = Vec::<Mat4>::new();
         for symmetry in &self.symmetries {
@@ -317,5 +315,15 @@ impl Model {
             colors: Some(vec![color; self.verts.len() * self.symmetries.len()]),
             ..Default::default()
         }
+    }
+
+    pub fn vertex_texts(&self) -> Vec<(String, Vec3)> {
+        let mut strings = Vec::<(String, Vec3)>::new();
+        for (symm_idx, symmetry) in self.symmetries.iter().enumerate() {
+            for (vert_idx, vert_pos) in self.verts.iter().enumerate() {
+                strings.push((format!("{vert_idx}:{symm_idx}"), symmetry * vert_pos));
+            }
+        }
+        strings
     }
 }

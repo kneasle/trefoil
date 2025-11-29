@@ -7,4 +7,4 @@ edition = "2024"
 catppuccin-egui = { version = "5.7.0", default-features = false, features = ["egui29"] }
 index_vec = "0.1.4"
 itertools = "0.14.0"
-three-d = { version = "0.18.2", features = ["egui-gui"] }
+three-d = { version = "0.18.2", features = ["egui-gui", "text"] }

@@ -5,11 +5,13 @@ use three_d::*;
 /// The 3D viewport used to display a model
 pub(crate) struct Viewport {
     context: Context,
+    text_generator: TextGenerator<'static>,
 
     camera: Camera,
     control: OrbitControl,
 
     wireframe_material: PhysicalMaterial,
+    text_material: ColorMaterial,
 }
 
 impl Viewport {
@@ -28,7 +30,6 @@ impl Viewport {
         );
         let control = OrbitControl::new(camera.target(), 0.1 * scene_radius, 100.0 * scene_radius);
 
-        // Materials
         let mut wireframe_material = PhysicalMaterial::new_opaque(
             context,
             &CpuMaterial {
@@ -40,13 +41,27 @@ impl Viewport {
         );
         wireframe_material.render_states.cull = Cull::Back;
 
+        let mut text_material = ColorMaterial::new_opaque(
+            context,
+            &CpuMaterial {
+                albedo: Srgba::WHITE,
+                ..Default::default()
+            },
+        );
+        text_material.render_states.cull = Cull::None;
+
+        let text_generator =
+            TextGenerator::new(include_bytes!("FiraMono-Medium.ttf"), 0, 30.0).unwrap();
+
         Self {
             context: context.clone(),
+            text_generator,
 
             camera,
             control,
 
             wireframe_material,
+            text_material,
         }
     }
 
@@ -76,12 +91,17 @@ impl Viewport {
         // Meshes
         // TODO: Add some caching to not send these to the GPU every frame
         let mut meshes: Vec<Box<dyn Object>> = Vec::new();
-        /*
-        if let Some(cpu_mesh) = model.face_mesh() {
-            let mesh = Mesh::new(&self.context, &cpu_mesh);
-            meshes.push(Box::new(Gm::new(mesh, &self.face_material)));
-        }
-        */
+
+        // Text
+        meshes.push(Box::new(Gm::new(
+            Mesh::new(
+                &self.context,
+                &self
+                    .text_generator
+                    .generate("Hello!", TextLayoutOptions::default()),
+            ),
+            &self.text_material,
+        )));
 
         meshes.push(Box::new(Gm::new(
             model.edge_mesh(&self.context),

@@ -67,7 +67,12 @@ impl Model {
         }
     }
 
-    pub fn add_polygon(&mut self, n: usize, verts: &[usize], override_normal: Option<Vec3>) {
+    pub fn add_polygon(
+        &mut self,
+        n: usize,
+        verts: &[(usize, usize)],
+        override_normal: Option<Vec3>,
+    ) {
         // Calculate the normal to the current chain of vertices
         assert!(verts.len() >= 2);
         let normal;
@@ -76,17 +81,18 @@ impl Model {
         } else {
             assert!(verts.len() >= 3);
             let mut total_normal = Vec3::zero();
-            for (i1, i2, i3) in verts.iter().tuple_windows() {
-                let v1 = self.verts[*i1];
-                let v2 = self.verts[*i2];
-                let v3 = self.verts[*i3];
+            for ((i1, symm1), (i2, symm2), (i3, symm3)) in verts.iter().tuple_windows() {
+                let v1 = self.symmetries[*symm1] * self.verts[*i1];
+                let v2 = self.symmetries[*symm2] * self.verts[*i2];
+                let v3 = self.symmetries[*symm3] * self.verts[*i3];
                 total_normal += (v3 - v2).cross(v2 - v1);
             }
             normal = total_normal.normalize();
         }
 
-        let first_vert_idx = *verts.first().unwrap();
-        let last_vert_idx = *verts.last().unwrap();
+        let (first_vert_idx, first_symm_idx) = *verts.first().unwrap();
+        let (last_vert_idx, last_symm_idx) = *verts.last().unwrap();
+        assert!(first_symm_idx == 0);
 
         // We want to distribute `num_new_verts` as a continuation of the two ends of `verts`
         let num_new_verts = n - verts.len();
@@ -97,7 +103,7 @@ impl Model {
 
         // Get two perpendicular axes to define the plane in which we will build our polygon
         let v1 = self.verts[first_vert_idx];
-        let v2 = self.verts[last_vert_idx];
+        let v2 = self.symmetries[last_symm_idx] * self.verts[last_vert_idx];
         let d = v2 - v1;
         let out = d.cross(normal);
 
@@ -130,12 +136,12 @@ impl Model {
         self.edges.push(Edge {
             vert_idx1: first_vert_idx,
             vert_idx2: idx_of_first_vert,
-            symmetry_idx2: 0,
+            symmetry_idx2: first_symm_idx,
         });
         self.edges.push(Edge {
             vert_idx1: last_vert_idx,
             vert_idx2: idx_of_first_vert + num_new_verts - 1,
-            symmetry_idx2: 0,
+            symmetry_idx2: last_symm_idx,
         });
     }
 

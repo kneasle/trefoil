@@ -20,9 +20,17 @@ fn main() {
 
     // Create model
     let mut model = model::Model::polygon(8, 2);
-    model.add_polygon(8, &vec![1, 2], Some(Vec3::new(1.0, 0.0, 1.0)));
-    model.add_polygon(6, &vec![9, 2, 3], Some(Vec3::new(1.0, 0.0, 1.0)));
-    model.add_polygon(6, &vec![0, 1, 4], Some(Vec3::new(-1.0, 0.0, 1.0)));
+    model.add_polygon(8, &vec![(0, 0), (1, 0)], Some(Vec3::new(1.0, 0.0, 1.0)));
+    model.add_polygon(
+        6,
+        &vec![(2, 0), (1, 0), (9, 0)],
+        Some(Vec3::new(0.0, 0.5, -1.0)),
+    );
+    model.add_polygon(
+        6,
+        &vec![(4, 0), (0, 0), (3, 1)],
+        Some(Vec3::new(0.0, -0.5, -1.0)),
+    );
     model.ensure_all_verts_have_three_edges();
 
     let unsimulated_model = model.clone();
@@ -30,7 +38,10 @@ fn main() {
     // Gui variables
     let mut is_simulating = false;
     let mut sim_opts = SimulationOptions::default();
-    let mut render_opts = RenderOptions::default();
+    let mut render_opts = RenderOptions {
+        show_axes: true,
+        show_vert_indices: true,
+    };
 
     // Create model view
     let mut view = crate::viewport::Viewport::new(&context, window.viewport());

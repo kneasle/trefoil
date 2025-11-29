@@ -96,7 +96,22 @@ impl Viewport {
 
         let mut meshes: Vec<Box<dyn Object>> = Vec::new();
 
-        // Text
+        // Model geometry
+        meshes.push(Box::new(Gm::new(
+            model.edge_mesh(&self.context),
+            &self.wireframe_material,
+        )));
+        meshes.push(Box::new(Gm::new(
+            model.vertex_mesh(&self.context),
+            &self.wireframe_material,
+        )));
+
+        // Axes
+        if render_opts.show_axes {
+            meshes.push(Box::new(Axes::new(&self.context, 0.1, 1.0)));
+        }
+
+        // Text (rendered last as it will display on top of all other geometry)
         if render_opts.show_vert_indices {
             for (text, pos) in model.vertex_texts() {
                 let mut mesh = Mesh::new(
@@ -114,21 +129,6 @@ impl Viewport {
 
                 meshes.push(Box::new(Gm::new(mesh, &self.text_material)));
             }
-        }
-
-        // Model geometry
-        meshes.push(Box::new(Gm::new(
-            model.edge_mesh(&self.context),
-            &self.wireframe_material,
-        )));
-        meshes.push(Box::new(Gm::new(
-            model.vertex_mesh(&self.context),
-            &self.wireframe_material,
-        )));
-
-        // Axes
-        if render_opts.show_axes {
-            meshes.push(Box::new(Axes::new(&self.context, 0.1, 1.0)));
         }
 
         target.render(&self.camera, meshes.iter().map(Deref::deref), &lights);

@@ -139,6 +139,38 @@ impl Model {
         });
     }
 
+    pub fn ensure_all_verts_have_three_edges(&mut self) {
+        for (vert_idx, edge_directions) in
+            self.get_edge_directions_per_vert().into_iter().enumerate()
+        {
+            match edge_directions.as_slice() {
+                [dir1, dir2] => {
+                    let new_vert_idx = self.verts.len();
+                    self.verts
+                        .push(self.verts[vert_idx] - (dir1 + dir2).normalize());
+                    self.edges.push(Edge {
+                        vert_idx1: vert_idx,
+                        vert_idx2: new_vert_idx,
+                        symmetry_idx2: 0, // Both exist in the same symmetrical section
+                    });
+                }
+                _ => {}
+            }
+        }
+    }
+
+    fn get_edge_directions_per_vert(&mut self) -> Vec<Vec<Vec3>> {
+        let mut edges_per_vert = vec![Vec::<Vec3>::new(); self.verts.len()];
+        for edge in &self.edges {
+            let (v1, v2) = self.edge_vert_positions(edge);
+            let d1 = v2 - v1;
+            let d2 = self.inverse_symmetries[edge.symmetry_idx2] * (v1 - v2);
+            edges_per_vert[edge.vert_idx1].push(d1);
+            edges_per_vert[edge.vert_idx2].push(d2);
+        }
+        edges_per_vert
+    }
+
     fn edge_vert_positions(&self, edge: &Edge) -> (Vec3, Vec3) {
         let v1 = self.verts[edge.vert_idx1];
         let v2 = self.symmetries[edge.symmetry_idx2] * self.verts[edge.vert_idx2];
@@ -162,7 +194,7 @@ impl Default for SimulationOptions {
     fn default() -> Self {
         Self {
             edge_length_force: 10.0,
-            vertex_angle_force: 10.0,
+            vertex_angle_force: 2.0,
         }
     }
 }
@@ -187,6 +219,25 @@ impl Model {
         }
 
         // Calculate forces from vertices wanting to have all their edges at 120
+        //
+        // TODO: Cache the adjacency
+        let mut edges_per_vert = vec![Vec::<Vec3>::new(); self.verts.len()];
+        for edge in &self.edges {
+            let (v1, v2) = self.edge_vert_positions(edge);
+            let d1 = v2 - v1;
+            let d2 = self.inverse_symmetries[edge.symmetry_idx2] * (v1 - v2);
+            edges_per_vert[edge.vert_idx1].push(d1);
+            edges_per_vert[edge.vert_idx2].push(d2);
+        }
+        for (vert_idx, edge_directions) in edges_per_vert.iter().enumerate() {
+            if edge_directions.len() == 3 {
+                let mut total_edge_dir = Vec3::zero();
+                for dir in edge_directions {
+                    total_edge_dir += *dir;
+                }
+                vert_forces[vert_idx] += total_edge_dir * options.vertex_angle_force;
+            }
+        }
 
         // Update the vertex positions by a little bit in their movement directions
         for (force, v) in vert_forces.into_iter().zip_eq(&mut self.verts) {

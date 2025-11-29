@@ -20,9 +20,10 @@ fn main() {
 
     // Create model
     let mut model = model::Model::polygon(8, 2);
-    model.add_polygon(8, &vec![1, 2], Some(Vec3::new(0.5, 0.0, 1.0)));
-    model.add_polygon(6, &vec![9, 2, 3], Some(Vec3::new(0.5, 0.0, 1.0)));
-    model.add_polygon(6, &vec![0, 1, 4], Some(Vec3::new(-0.5, 0.0, 1.0)));
+    model.add_polygon(8, &vec![1, 2], Some(Vec3::new(1.0, 0.0, 1.0)));
+    model.add_polygon(6, &vec![9, 2, 3], Some(Vec3::new(1.0, 0.0, 1.0)));
+    model.add_polygon(6, &vec![0, 1, 4], Some(Vec3::new(-1.0, 0.0, 1.0)));
+    model.ensure_all_verts_have_three_edges();
 
     let unsimulated_model = model.clone();
 
@@ -122,10 +123,18 @@ fn sidebar_gui(
     ui.heading("Simulation options");
     ui.horizontal(|ui| {
         ui.label("Edge length force:");
-        ui.add(egui::Slider::new(&mut sim_opts.edge_length_force, 0.0..=30.0).show_value(true));
+        ui.add(
+            egui::Slider::new(&mut sim_opts.edge_length_force, 0.01..=10.0)
+                .show_value(true)
+                .logarithmic(true),
+        );
     });
     ui.horizontal(|ui| {
         ui.label("Vertex angle force:");
-        ui.add(egui::Slider::new(&mut sim_opts.vertex_angle_force, 0.0..=30.0).show_value(true));
+        ui.add(
+            egui::Slider::new(&mut sim_opts.vertex_angle_force, 0.01..=10.0)
+                .show_value(true)
+                .logarithmic(true),
+        );
     });
 }
